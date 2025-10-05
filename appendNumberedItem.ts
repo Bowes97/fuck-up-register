@@ -1,6 +1,8 @@
 import fetch from 'node-fetch';
 import { Telegraf, Markup } from 'telegraf';
 import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 const NOTION_TOKEN = process.env.NOTION_TOKEN!;
