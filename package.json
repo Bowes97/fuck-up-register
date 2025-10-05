@@ -14,10 +14,12 @@
   "description": "",
   "dependencies": {
     "dotenv": "^17.2.3",
+    "express": "^5.1.0",
     "node-fetch": "^3.3.2",
     "telegraf": "^4.16.3"
   },
   "devDependencies": {
+    "@types/express": "^5.0.3",
     "@types/node": "^24.6.2",
     "@types/node-fetch": "^2.6.13",
     "ts-node": "^10.9.2",

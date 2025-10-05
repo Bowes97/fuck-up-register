@@ -2,6 +2,8 @@ import fetch from 'node-fetch';
 import { Telegraf, Markup } from 'telegraf';
 import 'dotenv/config';
 import dotenv from 'dotenv';
+import express from 'express';
+
 dotenv.config();
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
@@ -70,6 +72,7 @@ class Bot {
 
     public launchBot(): void {
         bot.launch();
+        bot.command('start', (ctx) => ctx.reply('Бот запущений через Webhook!'));
     }
 
     private async appendNumberedItem(blockId: string, text: string, createdBy: string): Promise<unknown> {
@@ -101,6 +104,17 @@ class Bot {
     }
 }
 
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(bot.webhookCallback('/bot'));
+
+app.listen(PORT, async () => {
+    const WEBHOOK_URL = process.env.WEBHOOK_URL!;
+    await bot.telegram.setWebhook(`${WEBHOOK_URL}/bot`);
+    console.log(`Webhook set to ${WEBHOOK_URL}/bot`);
+});
 
 const startBot = new Bot();
 
