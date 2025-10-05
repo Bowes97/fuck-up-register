@@ -1,8 +1,9 @@
 import fetch from 'node-fetch';
 import { Telegraf, Markup } from 'telegraf';
+import 'dotenv/config';
 
-const TELEGRAM_BOT_TOKEN = '8488866670:AAERrc78-0BJICMfRQ7cHDnZxHouQ3FgWOs';
-const NOTION_TOKEN = 'ntn_b18090462593EmV9fyUyFuGalCT1t4dZVy2kxE3kRX00Y1'; // your integration token
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
+const NOTION_TOKEN = process.env.NOTION_TOKEN!;
 const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
 
 const blocks = [
