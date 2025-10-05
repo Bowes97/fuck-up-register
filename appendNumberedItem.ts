@@ -27,8 +27,11 @@ const blocks = [
 const userSelection = new Map<string, string>();
 
 class Bot {
+    private inactivityTimer!: NodeJS.Timeout;
+
     public startAdding(): void {
         bot.command('add', (ctx) => {
+            this.resetInactivityTimer();
             const keyboard = blocks.map((b) => [Markup.button.callback(b.name, b.id)]);
             ctx.reply('Обери дрістолога', Markup.inlineKeyboard(keyboard));
         });
@@ -73,6 +76,36 @@ class Bot {
     public launchBot(): void {
         bot.launch();
         bot.command('start', (ctx) => ctx.reply('Бот запущений через Webhook!'));
+        this.startInactivityChecker();
+    }
+
+    private resetInactivityTimer(): void {
+        if (this.inactivityTimer) {
+            clearTimeout(this.inactivityTimer);
+        }
+
+        this.startInactivityChecker();
+    }
+
+    private startInactivityChecker(): void {
+        this.inactivityTimer = setInterval(async () => {
+            await this.fetchNotionItems('25306bd3-daf3-80ca-9ee7-df23fc3f903e');
+        },  14 * 60 * 1000);
+    }
+
+    private async fetchNotionItems(blockId: string): Promise<any> {
+        const url = `https://api.notion.com/v1/blocks/${blockId}/children?page_size=5`;
+        const res = await fetch(url, {
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${NOTION_TOKEN}`,
+                'Notion-Version': '2022-06-28',
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const data = await res.json();
+        return data;
     }
 
     private async appendNumberedItem(blockId: string, text: string, createdBy: string): Promise<unknown> {
@@ -103,7 +136,6 @@ class Bot {
         return data;
     }
 }
-
 
 const app = express();
 const PORT = process.env.PORT || 3000;
