@@ -81,7 +81,7 @@ class Bot {
                     .map((text: string, i: number) => `${i + 1}. ${text}`)
                     .join('\n');
 
-                await ctx.reply(`🧾 Список дрісні:\n\n${formattedList}`);
+                await ctx.reply(`🧾 Список дрісні ${selectedName}:\n\n${formattedList}`);
             }
 
         });
