@@ -25,22 +25,39 @@ const blocks = [
     { id: '27b06bd3-daf3-803b-98a3-fab5f264a540', name: 'Марійка' },
 ];
 const userSelection = new Map<string, string>();
+const userLastCommand = new Map<string, string>();
 
 class Bot {
-    private inactivityTimer!: NodeJS.Timeout;
+    public launchBot(): void {
+        bot.launch();
+        bot.command('start', (ctx) => ctx.reply('Бот запущений через Webhook!'));
+        this.startAdding();
+        this.handleSelection();
+        this.completedRequest();
+    }
 
-    public startAdding(): void {
+    private startAdding(): void {
         bot.command('add', (ctx) => {
-            this.resetInactivityTimer();
+            const userId = ctx.from.id.toString();
+            userLastCommand.set(userId, 'add');
             const keyboard = blocks.map((b) => [Markup.button.callback(b.name, b.id)]);
             ctx.reply('Обери дрістолога', Markup.inlineKeyboard(keyboard));
         });
+
+        bot.command('list', (ctx) => {
+            const userId = ctx.from.id.toString();
+            userLastCommand.set(userId, 'list');
+            const keyboard = blocks.map((b) => [Markup.button.callback(b.name, b.id)]);
+            ctx.reply('Обери дрістолог і дізнайся його пройоби', Markup.inlineKeyboard(keyboard));
+        });
     }
 
-    public handleSelection(): void {
+    private handleSelection(): void {
         bot.on('callback_query', async (ctx: any) => {
             const blockId = ctx.callbackQuery.data;
             const userId = ctx.from?.id.toString();
+
+            const lastCommand = userLastCommand.get(userId);
 
             if (!userId) return;
 
@@ -49,16 +66,34 @@ class Bot {
 
             userSelection.set(userId, blockId);
 
-            await ctx.answerCbQuery();
-            await ctx.reply(`Впиши яку дрісню морознув - ${selectedName}`);
+            if (lastCommand === 'add') {
+                await ctx.answerCbQuery();
+                await ctx.reply(`Впиши яку дрісню морознув - ${selectedName}`);
+            } else if (lastCommand === 'list') {
+                const fuckUps = await this.getAllFuckUpByUser(blockId);
+
+                if (!fuckUps.length) {
+                    await ctx.reply('Немає дрісні 😎');
+                    return;
+                }
+
+                const formattedList = fuckUps
+                    .map((text: string, i: number) => `${i + 1}. ${text}`)
+                    .join('\n');
+
+                await ctx.reply(`🧾 Список дрісні:\n\n${formattedList}`);
+            }
+
         });
     }
 
-    public completedRequest(): void {
+    private completedRequest(): void {
         bot.on('text', async (ctx) => {
             if (ctx.message.from.is_bot) return;
             const userId = ctx.from?.id.toString();
             if (!userId) return;
+
+            if (userLastCommand.get(userId) !== 'add') return;
 
             const blockId = userSelection.get(userId);
             if (!blockId) return;
@@ -73,39 +108,26 @@ class Bot {
         });
     }
 
-    public launchBot(): void {
-        bot.launch();
-        bot.command('start', (ctx) => ctx.reply('Бот запущений через Webhook!'));
-        this.startInactivityChecker();
-    }
+    private async getAllFuckUpByUser(blockId: string): Promise<any> {
+        const url = `https://api.notion.com/v1/blocks/${blockId}/children`;
 
-    private resetInactivityTimer(): void {
-        if (this.inactivityTimer) {
-            clearTimeout(this.inactivityTimer);
-        }
-
-        this.startInactivityChecker();
-    }
-
-    private startInactivityChecker(): void {
-        this.inactivityTimer = setInterval(async () => {
-            await this.fetchNotionItems('25306bd3-daf3-80ca-9ee7-df23fc3f903e');
-        },  14 * 60 * 1000);
-    }
-
-    private async fetchNotionItems(blockId: string): Promise<any> {
-        const url = `https://api.notion.com/v1/blocks/${blockId}/children?page_size=5`;
         const res = await fetch(url, {
             method: 'GET',
             headers: {
                 Authorization: `Bearer ${NOTION_TOKEN}`,
                 'Notion-Version': '2022-06-28',
                 'Content-Type': 'application/json',
-            },
+            }
         });
 
-        const data = await res.json();
-        return data;
+        const data: any = await res.json();
+        const texts = data.results
+            .filter((b: any) => b.type === 'numbered_list_item')
+            .map((b: any) =>
+                b.numbered_list_item.rich_text.map((t: any) => t.plain_text).join('')
+            );
+
+        return texts;
     }
 
     private async appendNumberedItem(blockId: string, text: string, createdBy: string): Promise<unknown> {
@@ -138,19 +160,15 @@ class Bot {
 }
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 app.use(bot.webhookCallback('/bot'));
 
 app.listen(PORT, async () => {
-    const WEBHOOK_URL = process.env.WEBHOOK_URL!;
+    const WEBHOOK_URL = process.env.TEST_WEBHOOK_URL!;
     await bot.telegram.setWebhook(`${WEBHOOK_URL}/bot`);
     console.log(`Webhook set to ${WEBHOOK_URL}/bot`);
 });
 
 const startBot = new Bot();
-
-startBot.startAdding();
-startBot.completedRequest();
-startBot.handleSelection()
 startBot.launchBot();
