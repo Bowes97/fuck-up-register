@@ -23,6 +23,7 @@ const blocks = [
     { id: '25306bd3-daf3-80d7-afba-fac174d37415', name: 'Юля' },
     { id: '25806bd3-daf3-80e1-9485-f3de2f1a0926', name: 'Соломія' },
     { id: '27b06bd3-daf3-803b-98a3-fab5f264a540', name: 'Марійка' },
+    { id: '29006bd3-daf3-80e4-b8ca-dfc1d620551f', name: 'Маша' }
 ];
 const userSelection = new Map<string, string>();
 const userLastCommand = new Map<string, string>();
